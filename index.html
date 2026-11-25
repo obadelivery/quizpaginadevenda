@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#100d1b" />
+  <meta name="description" content="Quiz interativo e página de vendas do Livro de São Cipriano — rezas, orações e tradição popular." />
+  <title>Livro de São Cipriano — Quiz e Vendas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #fffaf2;
+      --ink: #292331;
+      --muted: #6d6571;
+      --purple: #573a70;
+      --purple-dark: #362344;
+      --gold: #b7863c;
+      --line: #e5ddd3;
+      --soft-purple: #f1eafa;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #17111e;
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, a { font: inherit; }
+    button { color: inherit; border: none; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    .page-background {
+      min-height: 100vh;
+      min-height: 100dvh;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 86px 20px 75px;
+      overflow: hidden;
+      background-color: #1d1524;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 70% 40%, rgba(87, 58, 112, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 20% 80%, rgba(183, 134, 60, 0.12) 0%, transparent 50%),
+        linear-gradient(160deg, #1a1222 0%, #2a1a38 45%, #1d1524 100%);
+    }
+    .image-shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(13, 8, 18, .55) 0%, rgba(17, 10, 22, .35) 50%, rgba(13, 8, 18, .45) 100%),
+        linear-gradient(0deg, rgba(9, 5, 13, .7), transparent 30%, rgba(9, 5, 13, .25));
+      pointer-events: none;
+    }
+    .top-label, .bottom-note {
+      position: absolute;
+      z-index: 2;
+      color: rgba(255, 250, 242, .84);
+    }
+    .top-label {
+      top: 27px;
+      left: 30px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+    .cross { color: #e4c58c; padding-right: 7px; }
+    .bottom-note {
+      bottom: 24px;
+      margin: 0;
+      font-size: 12px;
+      letter-spacing: .02em;
+      color: rgba(255, 250, 242, .7);
+    }
+
+    /* QUIZ / RESULT */
+    .popup {
+      width: min(100%, 625px);
+      position: relative;
+      z-index: 2;
+      border-radius: 13px;
+      background: var(--cream);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .43);
+      overflow: hidden;
+      animation: popup-in .35s ease both;
+    }
+    @keyframes popup-in {
+      from { opacity: 0; transform: translateY(12px) scale(.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .popup-topline {
+      display: flex;
+      justify-content: space-between;
+      padding: 18px 30px 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .progress-percent { color: var(--purple); }
+    .progress-bar {
+      height: 6px;
+      margin: 0 30px;
+      background: #e8e0d8;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .progress-bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--purple);
+      transition: width .3s ease;
+    }
+    .popup-content { padding: 31px 42px 37px; }
+    .small-kicker {
+      margin: 0 0 13px;
+      color: var(--gold);
+      font-size: 12px;
+      letter-spacing: .13em;
+      font-weight: 700;
+    }
+    h1 {
+      margin: 0;
+      color: var(--ink);
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(32px, 5vw, 53px);
+      line-height: 1.04;
+      letter-spacing: -.035em;
+    }
+    .question-intro, .result-intro {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.55;
+      margin: 18px 0 27px;
+    }
+    .option-list { display: grid; gap: 12px; }
+    .option {
+      min-height: 67px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      width: 100%;
+      padding: 13px 17px;
+      border: 2px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink);
+      text-align: left;
+      font-size: 17px;
+      line-height: 1.35;
+      transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+    .option:hover {
+      border-color: #bba4cf;
+      background: #fcf9ff;
+      transform: translateY(-1px);
+    }
+    .option.selected {
+      border-color: var(--purple);
+      background: var(--soft-purple);
+    }
+    .option-radio {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #bcb2bd;
+      border-radius: 50%;
+      flex: 0 0 24px;
+      position: relative;
+    }
+    .option.selected .option-radio { border-color: var(--purple); }
+    .option.selected .option-radio::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      top: 4px;
+      left: 4px;
+      border-radius: 50%;
+      background: var(--purple);
+    }
+    .continue-button {
+      width: 100%;
+      min-height: 60px;
+      margin-top: 25px;
+      border-radius: 8px;
+      padding: 15px 19px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--purple);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      transition: background .18s ease, transform .18s ease, opacity .18s ease;
+    }
+    .continue-button:hover:not(:disabled) {
+      background: var(--purple-dark);
+      transform: translateY(-1px);
+    }
+    .continue-button:disabled {
+      background: #c8bfca;
+      cursor: not-allowed;
+    }
+    .continue-button span { font-size: 26px; font-weight: 400; }
+    .helper-text {
+      min-height: 17px;
+      margin: 12px 0 0;
+      color: #8c828c;
+      text-align: center;
+      font-size: 12px;
+    }
+    .helper-text.ready { color: var(--purple); }
+
+    .result-popup { max-width: 680px; }
+    .result-intro { margin-bottom: 24px; }
+    .result-points {
+      display: grid;
+      gap: 14px;
+      margin: 21px 0 27px;
+      padding: 20px 19px;
+      border-radius: 9px;
+      background: #f4eee6;
+    }
+    .result-points > div {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .result-points span {
+      display: grid;
+      place-items: center;
+      width: 21px;
+      height: 21px;
+      flex: 0 0 21px;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--gold);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .result-points p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .result-points strong {
+      color: var(--ink);
+      font-size: 15px;
+    }
+    .buy-button {
+      background: var(--gold);
+      color: #2d211a;
+    }
+    .buy-button:hover:not(:disabled) {
+      background: #9b6e2d;
+      color: #fff;
+    }
+    .restart-button {
+      display: block;
+      margin: 18px auto 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .restart-button:hover { color: var(--purple); }
+
+    /* SALES / WELCOME */
+    .welcome-popup {
+      width: min(100%, 650px);
+      position: relative;
+      z-index: 2;
+      padding: 44px 48px 36px;
+      border: 1px solid rgba(255, 250, 242, .58);
+      border-radius: 13px;
+      background: rgba(255, 250, 242, .97);
+      box-shadow: 0 25px 90px rgba(0, 0, 0, .5);
+      text-align: center;
+      animation: popup-in .4s ease both;
+    }
+    .welcome-popup .popup-symbol {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 22px;
+      border: 1px solid rgba(183, 134, 60, .5);
+      border-radius: 50%;
+      color: var(--gold);
+      font-size: 21px;
+    }
+    .welcome-popup .small-kicker { margin-bottom: 16px; }
+    .welcome-popup h1 {
+      font-size: clamp(36px, 5vw, 58px);
+      line-height: 1.02;
+    }
+    .welcome-popup h1 em {
+      color: var(--purple);
+      font-style: italic;
+    }
+    .welcome-text {
+      max-width: 540px;
+      margin: 21px auto 23px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.65;
+    }
+    .book-highlights {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 9px 18px;
+      margin: 0 auto 27px;
+      color: var(--purple);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .book-highlights strong {
+      color: var(--gold);
+      margin-right: 4px;
+    }
+    .acquire-button {
+      width: 100%;
+      min-height: 62px;
+      padding: 16px 21px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 8px;
+      background: var(--purple);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      transition: background .18s ease, transform .18s ease;
+    }
+    .acquire-button:hover {
+      background: var(--purple-dark);
+      transform: translateY(-1px);
+    }
+    .acquire-button span {
+      font-size: 27px;
+      font-weight: 400;
+    }
+    .legal-note {
+      margin: 15px 0 0;
+      color: #8c828c;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    /* RESPONSIVO */
+    @media (max-width: 600px) {
+      .page-background { padding: 77px 12px 65px; }
+      .top-label { top: 21px; left: 18px; font-size: 13px; }
+      .bottom-note { bottom: 17px; font-size: 10px; }
+      .popup { border-radius: 11px; }
+      .popup-topline { padding: 16px 21px 11px; font-size: 12px; }
+      .progress-bar { height: 5px; margin: 0 21px; }
+      .popup-content { padding: 26px 21px 27px; }
+      .small-kicker { font-size: 10px; }
+      h1 { font-size: 32px; }
+      .question-intro, .result-intro { font-size: 16px; margin: 15px 0 22px; }
+      .option { min-height: 66px; padding: 12px 14px; font-size: 16px; }
+      .continue-button { font-size: 16px; min-height: 57px; }
+      .result-points { padding: 17px 14px; }
+      .result-points p { font-size: 13px; }
+      .result-points strong { font-size: 14px; }
+      .welcome-popup { padding: 31px 21px 27px; }
+      .welcome-popup .popup-symbol { width: 40px; height: 40px; margin-bottom: 18px; }
+      .welcome-popup h1 { font-size: 34px; }
+      .welcome-text { margin: 17px auto 20px; font-size: 16px; line-height: 1.55; }
+      .book-highlights { display: grid; gap: 8px; margin-bottom: 23px; font-size: 14px; }
+      .acquire-button { min-height: 58px; font-size: 17px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // ========== CONFIGURAÇÃO ==========
+    // Link de compra InfinitePay
+    const purchaseUrl = 'https://loja.infinitepay.io/ciprianopoderoso/wwd3652-privacy-nuds';
+
+    const questions = [
+      {
+        title: 'O que você gostaria de conhecer?',
+        intro: 'Escolha uma opção abaixo para continuar.',
+        options: [
+          'Histórias e símbolos antigos',
+          'Rezas, orações e práticas populares',
+          'Fé, cultura e tradição',
+        ],
+      },
+      {
+        title: 'Que tipo de leitura interessa mais a você?',
+        intro: 'Não existe resposta certa. Escolha o que mais combina com sua curiosidade.',
+        options: [
+          'Um registro para estudar com calma',
+          'Textos para conhecer uma tradição',
+          'Uma leitura simbólica e histórica',
+        ],
+      },
+      {
+        title: 'Como você prefere conhecer esta obra?',
+        intro: 'Sua resposta ajuda a mostrar o livro de forma mais clara.',
+        options: [
+          'Com curiosidade e mente aberta',
+          'Com respeito à dimensão religiosa',
+          'Como pesquisa cultural e histórica',
+        ],
+      },
+    ];
+
+    let currentStep = 0;
+    let selectedIndex = null;
+    const app = document.querySelector('#app');
+
+    function renderPage(content, bottomNote) {
+      app.innerHTML = `
+        <main class="page-background">
+          <div class="image-shade"></div>
+          <div class="top-label"><span class="cross">✦</span> Livro de São Cipriano</div>
+          ${content}
+          <p class="bottom-note">${bottomNote || 'Material de caráter cultural e religioso.'}</p>
+        </main>
+      `;
+    }
+
+    /* ========== ETAPA 1: QUIZ ========== */
+    function renderQuestion() {
+      const question = questions[currentStep];
+      const progress = Math.round(((currentStep + 1) / questions.length) * 100);
+      selectedIndex = null;
+
+      renderPage(`
+        <section class="popup" aria-labelledby="question-title">
+          <div class="popup-topline">
+            <span>Pergunta ${currentStep + 1} de ${questions.length}</span>
+            <span class="progress-percent">${progress}%</span>
+          </div>
+          <div class="progress-bar" aria-hidden="true"><span style="width: ${progress}%"></span></div>
+          <div class="popup-content">
+            <p class="small-kicker">UMA JORNADA RÁPIDA</p>
+            <h1 id="question-title">${question.title}</h1>
+            <p class="question-intro">${question.intro}</p>
+            <div class="option-list" role="radiogroup" aria-label="Escolha uma resposta">
+              ${question.options.map((option, index) => `
+                <button type="button" class="option" data-index="${index}" role="radio" aria-checked="false">
+                  <span class="option-radio" aria-hidden="true"></span>
+                  <span>${option}</span>
+                </button>
+              `).join('')}
+            </div>
+            <button type="button" class="continue-button" id="continue-button" disabled>
+              Continuar <span>→</span>
+            </button>
+            <p class="helper-text" id="helper-text">Toque em uma resposta para continuar.</p>
+          </div>
+        </section>
+      `);
+
+      const options = [...document.querySelectorAll('.option')];
+      const continueButton = document.querySelector('#continue-button');
+      const helperText = document.querySelector('#helper-text');
+
+      options.forEach((option) => {
+        option.addEventListener('click', () => {
+          options.forEach((item) => {
+            item.classList.remove('selected');
+            item.setAttribute('aria-checked', 'false');
+          });
+          selectedIndex = Number(option.dataset.index);
+          option.classList.add('selected');
+          option.setAttribute('aria-checked', 'true');
+          continueButton.disabled = false;
+          helperText.textContent = 'Resposta selecionada. Toque em continuar.';
+          helperText.classList.add('ready');
+        });
+      });
+
+      continueButton.addEventListener('click', () => {
+        if (selectedIndex === null) return;
+        continueButton.disabled = true;
+        continueButton.innerHTML = 'Carregando <span>…</span>';
+        setTimeout(() => {
+          if (currentStep < questions.length - 1) {
+            currentStep += 1;
+            renderQuestion();
+          } else {
+            renderResult();
+          }
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 220);
+      });
+    }
+
+    /* ========== ETAPA 2: RESULTADO ========== */
+    function renderResult() {
+      renderPage(`
+        <section class="popup result-popup" aria-labelledby="result-title">
+          <div class="popup-content">
+            <p class="small-kicker">CONHEÇA A OBRA</p>
+            <h1 id="result-title">O Livro de São Cipriano</h1>
+            <p class="result-intro">Uma obra que reúne rezas, feitiços, orações e relatos ligados à tradição popular, à fé e ao imaginário de diferentes épocas.</p>
+            <div class="result-points">
+              <div><span>✓</span><p><strong>Contexto histórico</strong><br />Conheça a origem e a transmissão de uma tradição escrita.</p></div>
+              <div><span>✓</span><p><strong>Conteúdo variado</strong><br />Textos relacionados ao período anterior e posterior à conversão cristã.</p></div>
+              <div><span>✓</span><p><strong>Leitura com discernimento</strong><br />Um material cultural e religioso, sem promessa de resultado sobrenatural.</p></div>
+            </div>
+            <button type="button" class="continue-button buy-button" id="go-to-sales">
+              Ver a página de compra <span>→</span>
+            </button>
+            <p class="helper-text">Você será direcionado para a página de vendas do produto.</p>
+            <button type="button" class="restart-button" id="restart-button">↺ Responder novamente</button>
+          </div>
+        </section>
+      `);
+
+      document.querySelector('#go-to-sales').addEventListener('click', () => {
+        renderSalesPage();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      document.querySelector('#restart-button').addEventListener('click', () => {
+        currentStep = 0;
+        renderQuestion();
+      });
+    }
+
+    /* ========== ETAPA 3: PÁGINA DE VENDAS ========== */
+    function renderSalesPage() {
+      renderPage(`
+        <section class="welcome-popup" aria-labelledby="welcome-title">
+          <div class="popup-symbol" aria-hidden="true">✦</div>
+          <p class="small-kicker">UMA COLETÂNEA DE TRADIÇÃO POPULAR</p>
+          <h1 id="welcome-title">Seja bem-vindo ao<br /><em>mundo oculto.</em></h1>
+          <p class="welcome-text">Conheça as rezas, orações, feitiços, rituais e magias atribuídas a São Cipriano — reunidos em uma obra que atravessou gerações e agora pode estar em suas mãos.</p>
+          <div class="book-highlights">
+            <span><strong>✦</strong> Rezas e orações</span>
+            <span><strong>✦</strong> Rituais e simpatias</span>
+            <span><strong>✦</strong> Segredos populares</span>
+          </div>
+          <a class="acquire-button" href="${purchaseUrl}" target="_blank" rel="noopener noreferrer">
+            Adquirir agora <span>→</span>
+          </a>
+          <p class="legal-note">Conteúdo de caráter cultural, religioso e popular. Leia com discernimento.</p>
+        </section>
+      `, 'O Verdadeiro Livro de São Cipriano');
+    }
+
+    // Inicia pelo quiz
+    renderQuestion();
+  </script>
+</body>
+</html>
